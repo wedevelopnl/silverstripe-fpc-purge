@@ -40,22 +40,40 @@ server {
 ```yaml
 ---
 Name: 'fpc-purge-config'
-After:
-  - 'fpc-purge'
 Only:
-    environment: 'live'
+  environment: 'live'
 ---
 WeDevelop\FPCPurge\FPCPurgeConfig:
   enabled: true
-  purge_cache_url: '/purge-cache'
+  endpoints:
+    # Purging locally over HTTP
+    - host: localhost:80
+      method: PURGE
+      path: /purge-cache
+    # Purging externally over HTTPS
+    - host: tls://example.com:443
+      method: PURGE
+      path: /purge-cache
+    # Purging a specific server (useful when load balancing and purging all servers)
+    - host: tls://10.0.0.5:443
+      http_host: example.com # Required to tell nginx or apache what virtual host you want to connect to
+      method: PURGE
+      path: /purge-cache
 
 Page:
   extensions:
     - WeDevelop\FPCPurge\Extensions\FPCPurgeExtension
 ```
 
-Here you can enable the module and configure the URL used to purge.
+Here you can enable the module and configure the endpoint used to purge.
+
+You can test this configuration by going into the SilverStripe admin, then click FPC Purge in the sidebar and click the
+Purge Cache button. It should tell you if it was successful.
+
 We also add an extension to Page to purge the cache after publishing a page.
+
+**NOTE:** The purge after publishing opens a connection, then sends a non-blocking request,
+should have little to no impact on publishing performance depending on the endpoints.
 
 ### Setting up Cache Control
 
@@ -113,8 +131,7 @@ a CSRF token. Luckily, there are two things protecting us from this mistake.
 ```yaml
 WeDevelop\FPCPurge\FPCPurgeConfig:
   enabled: false
-  purge_cache_url: '/purge-cache'
-  purge_request_method: 'PURGE'
+  endpoints: []
 ```
 
 ## License

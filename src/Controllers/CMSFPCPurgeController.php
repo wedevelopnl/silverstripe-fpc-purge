@@ -59,7 +59,13 @@ final class CMSFPCPurgeController extends LeftAndMain
             return $response;
         }
 
-        FPCPurgeService::purge();
+        try {
+            FPCPurgeService::purge(false);
+        } catch (\RuntimeException $e) {
+            $response->setStatusCode(400);
+            $response->addHeader('X-Status', rawurlencode($e->getMessage()));
+            return $response;
+        }
 
         $response->addHeader('X-Status', rawurlencode('Cache purged!'));
         return $response;

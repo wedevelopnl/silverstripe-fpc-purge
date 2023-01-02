@@ -16,7 +16,6 @@
     "prefer-stable": true,
     "require": {
         "php": ">=7.4",
-        "ext-curl": "*",
         "silverstripe/cms": "^4.6.0@stable"
     },
     "require-dev": {

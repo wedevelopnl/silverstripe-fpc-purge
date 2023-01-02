@@ -11,7 +11,15 @@ This module adds some cache purging capabilities to the website, to support FPC 
 
 ### Configuring nginx
 
-Make sure the Lua module is loaded in nginx. Then update your server configuration:
+Install [ngx_cache_purge](https://www.getpagespeed.com/server-setup/ngx_cache_purge-closing-the-gap-with-varnish).
+
+Ubuntu:
+
+```bash
+apt install libnginx-mod-http-cache-purge
+```
+
+Then update your server configuration:
 
 ```
 fastcgi_cache_path /var/cache/nginx levels=1:2 keys_zone=fastcgicache:100m max_size=5g inactive=60m use_temp_path=off;
@@ -19,16 +27,10 @@ fastcgi_cache_key "$scheme$request_method$host$request_uri";
 
 server {
     location = /purge-cache {
-        default_type 'text/plain';
-    
-        if ($request_method = PURGE) {
-            content_by_lua_block {
-                os.execute("rm -rf /var/cache/nginx/*")
-                ngx.say("Cache cleared");
-            }
-        }
+        fastcgi_cache_purge fastcgicache purge_all;
+        return 200;
     }
-    
+
     # ...
 }
 ```

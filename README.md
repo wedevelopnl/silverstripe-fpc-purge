@@ -11,13 +11,7 @@ This module adds some cache purging capabilities to the website, to support FPC 
 
 ### Configuring nginx
 
-Install [ngx_cache_purge](https://www.getpagespeed.com/server-setup/ngx_cache_purge-closing-the-gap-with-varnish).
-
-Ubuntu:
-
-```bash
-apt install libnginx-mod-http-cache-purge
-```
+Install the latest version of [ngx_cache_purge](https://github.com/nginx-modules/ngx_cache_purge).
 
 Then update your server configuration:
 
@@ -27,8 +21,33 @@ fastcgi_cache_key "$scheme$request_method$host$request_uri";
 
 server {
     location = /purge-cache {
-        fastcgi_cache_purge fastcgicache purge_all;
-        return 200;
+        fastcgi_pass unix:/run/php/php7.4-fpm.sock;
+        fastcgi_cache fastcgicache;
+        fastcgi_cache_purge PURGE purge_all from 127.0.0.1;
+        cache_purge_response_type text;
+    }
+
+    location /index.php {
+        fastcgi_buffer_size 32k;
+        fastcgi_busy_buffers_size 64k;
+        fastcgi_buffers 4 32k;
+        fastcgi_keep_conn on;
+        fastcgi_pass unix:/run/php/php7.4-fpm.sock;
+        fastcgi_index index.php;
+        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+        include fastcgi_params;
+
+        # fastcgi caching
+        fastcgi_cache fastcgicache;
+        fastcgi_cache_valid 200 301 302 60m;
+        fastcgi_cache_use_stale error timeout updating invalid_header http_500 http_503;
+        fastcgi_cache_min_uses 1;
+        fastcgi_cache_lock on;
+        fastcgi_no_cache $cookie_PHPSESSID;
+        fastcgi_cache_bypass $cookie_PHPSESSID;
+        fastcgi_ignore_headers Set-Cookie;
+
+        add_header X-Cache $upstream_cache_status;
     }
 
     # ...
@@ -50,6 +69,11 @@ WeDevelop\FPCPurge\FPCPurgeConfig:
   endpoints:
     # Purging locally over HTTP
     - host: localhost:80
+      method: PURGE
+      path: /purge-cache
+    # Purging locally over HTTPS
+    - host: tls://localhost:443
+      http_host: example.com # Required to tell nginx or apache what virtual host you want to connect to
       method: PURGE
       path: /purge-cache
     # Purging externally over HTTPS

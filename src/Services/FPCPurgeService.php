@@ -37,7 +37,8 @@ final class FPCPurgeService
             fwrite($socket, $request);
 
             if (!$fireAndForget) {
-                $responseCode = stream_get_contents($socket, 3, 9);
+                fread($socket, 9); // HTTP/1.1
+                $responseCode = (int)stream_get_contents($socket, 3);
 
                 if ($responseCode <> 200) {
                     fclose($socket);

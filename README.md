@@ -101,6 +101,14 @@ We also add an extension to Page to purge the cache after publishing a page.
 **NOTE:** The purge after publishing opens a connection, then sends a non-blocking request,
 should have little to no impact on publishing performance depending on the endpoints.
 
+If you're using dnadesign/silverstripe-elemental don't forget to also apply the extension on BaseElement to make sure cache is purged after publishing an element.
+
+```yaml
+DNADesign\Elemental\Models\BaseElement:
+  extensions:
+    - WeDevelop\FPCPurge\Extensions\FPCPurgeExtension
+```
+
 ### Setting up Cache Control
 
 All of the above will not cache anything until you setup cache control.
